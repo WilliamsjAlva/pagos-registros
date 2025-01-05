@@ -1,19 +1,33 @@
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const Navbar = () => {
     const navigate = useNavigate();
+    const [user, setUser] = useState({
+        isLoggedIn: false,
+        isAdmin: false,
+    });
 
-    const isAuthenticated = () => {
-        return localStorage.getItem('authToken') !== null;
-    };
-
-    const isAdmin = () => {
-        return localStorage.getItem('userRole') === 'admin';
-    };
+    // Actualizar el estado según el token y rol del usuario
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        const userRole = localStorage.getItem('userRole');
+        if (token) {
+            setUser({
+                isLoggedIn: true,
+                isAdmin: userRole === 'admin',
+            });
+        } else {
+            setUser({
+                isLoggedIn: false,
+                isAdmin: false,
+            });
+        }
+    }, []);
 
     const handleLogout = () => {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userRole');
+        localStorage.clear(); // Elimina todos los datos guardados
+        setUser({ isLoggedIn: false, isAdmin: false });
         navigate('/login');
     };
 
@@ -24,7 +38,7 @@ const Navbar = () => {
                     MiAplicación
                 </Link>
                 <ul className="flex space-x-4">
-                    {!isAuthenticated() && (
+                    {!user.isLoggedIn ? (
                         <>
                             <li>
                                 <Link to="/login" className="hover:underline">
@@ -37,29 +51,26 @@ const Navbar = () => {
                                 </Link>
                             </li>
                         </>
-                    )}
-
-                    {isAuthenticated() && (
+                    ) : (
                         <>
                             <li>
                                 <Link to="/dashboard" className="hover:underline">
                                     Dashboard
                                 </Link>
                             </li>
+                            {user.isAdmin && (
+                                <li>
+                                    <Link to="/admin" className="hover:underline">
+                                        Panel de Administrador
+                                    </Link>
+                                </li>
+                            )}
                             <li>
                                 <button onClick={handleLogout} className="hover:underline">
                                     Cerrar Sesión
                                 </button>
                             </li>
                         </>
-                    )}
-
-                    {isAdmin() && (
-                        <li>
-                            <Link to="/admin" className="hover:underline">
-                                Panel de Administrador
-                            </Link>
-                        </li>
                     )}
                 </ul>
             </div>

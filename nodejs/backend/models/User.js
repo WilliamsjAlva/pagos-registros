@@ -1,3 +1,4 @@
+//User.js
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
@@ -31,22 +32,23 @@ const userSchema = new mongoose.Schema({
   ],
 }, { versionKey: false });
 
-// middleware presave para hashear contraseñas
-userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) return next();
+// Métodos estaticos
+userSchema.statics.comparePassword = async function (Password, hashedPassword) {
   try {
-    const salt = await bcrypt.genSalt(10);  // generar un salt
-    this.password = await bcrypt.hash(this.password, salt);  // hshear la contraseña
-    next();
-  } catch (err) {
-    next(err);
+    return await bcrypt.compare(Password, hashedPassword);
+  } catch (error) {
+    throw new Error(error);
   }
-});
-
-// validar contraseñas
-userSchema.methods.validatePassword = async function (password) {
-  return bcrypt.compare(password, this.password);  // comparar contrasena co la almacrnada
 };
+
+userSchema.statics.encryptPassword = async function (clave) {
+  if (!clave) {
+    throw new Error('La contraseña es requerida');
+  }
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(clave, salt);
+};
+
 
 const User = mongoose.model('User', userSchema);
 

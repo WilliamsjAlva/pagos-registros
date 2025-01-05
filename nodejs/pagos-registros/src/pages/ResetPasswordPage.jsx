@@ -7,7 +7,7 @@ const ResetPasswordPage = () => {
   const handleResetPassword = (e) => {
     e.preventDefault();
     console.log('Restablecer contraseña con:', { token, newPassword });
-    // Lógica para validar el token y actualizar la contraseña
+    // lógica para validar el token y actualizar la contraseña
   };
 
   return (

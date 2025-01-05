@@ -47,28 +47,42 @@ const loginUser = async (req, res) => {
   try {
     const { username, password } = req.body;
 
+    // Verificar si el usuario existe
     const user = await User.findOne({ username });
     if (!user) {
-      return res.status(400).json({ message: 'Usuario no encontrado' });
+      return res.status(404).json({ message: 'Usuario no encontrado' });
     }
 
-    // validarcontraseña
+    // Validar la contraseña
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      return res.status(400).json({ message: 'Contraseña incorrecta' });
+      return res.status(401).json({ message: 'Contraseña incorrecta' });
     }
 
+    // Generar token JWT
     const token = jwt.sign(
-      { id: user._id, isAdmin: user.isAdmin },
+      { id: user._id, isAdmin: user.isAdmin }, // Incluye ID y rol de administrador
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '1h' } // Token válido por 1 hora
     );
 
-    res.status(200).json({ message: 'Inicio de sesión exitoso', token });
+    // Respuesta exitosa
+    res.status(200).json({
+      message: 'Inicio de sesión exitoso',
+      token, // Token generado
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        isAdmin: user.isAdmin,
+      }, // Información básica del usuario
+    });
   } catch (error) {
+    console.error('Error en loginUser:', error); // Log para debug
     res.status(500).json({ message: 'Error en el servidor' });
   }
 };
+
 
 // cambiar contraseña
 const changePassword = async (req, res) => {

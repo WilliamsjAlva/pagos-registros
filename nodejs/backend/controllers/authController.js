@@ -1,18 +1,18 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
-// Registrar un nuevo usuario
+// registro deusuario
 const registerUser = async (req, res) => {
   try {
     const { firstName, lastName, username, email, password, cedula, securityQuestions } = req.body;
 
-    // Verificar si el correo, cédula o nombre de usuario ya existen
+    // verificar si algun dato esta en uso (correo, cedula, usuario
     const existingUser = await User.findOne({ $or: [{ email }, { username }, { cedula }] });
     if (existingUser) {
       return res.status(400).json({ message: 'El correo, cédula o nombre de usuario ya están registrados' });
     }
 
-    // Validar preguntas de seguridad
+    // preguntas de seguridad de recuperacion de contraseña
     if (!securityQuestions || securityQuestions.length < 3) {
       return res.status(400).json({ message: 'Debes completar las 3 preguntas de seguridad' });
     }
@@ -22,7 +22,7 @@ const registerUser = async (req, res) => {
       }
     }
 
-    // Crear un nuevo usuario
+    // crear un nuevo usuario
     const newUser = new User({
       firstName,
       lastName,
@@ -40,7 +40,7 @@ const registerUser = async (req, res) => {
   }
 };
 
-// Iniciar sesión de usuario
+// iniciar sesión de usuario
 const loginUser = async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -51,26 +51,31 @@ const loginUser = async (req, res) => {
       return res.status(400).json({ message: 'Usuario no encontrado' });
     }
 
-    // Validar la contraseña usando el método `validatePassword`
+    // Validar contraseña usando validatePassword
     const isValidPassword = await user.validatePassword(password);
     if (!isValidPassword) {
       return res.status(400).json({ message: 'Contraseña incorrecta' });
     }
 
-    // Generar token JWT
+    // Generar token JWT con la información del usuario (incluyendo el rol)
     const token = jwt.sign(
-      { userId: user._id, role: user.isAdmin ? 'admin' : 'user' },
+      { userId: user._id, role: user.isAdmin ? 'admin' : 'user' }, // Incluye el rol
       process.env.JWT_SECRET,
       { expiresIn: '1h' }
     );
 
-    res.status(200).json({ message: 'Inicio de sesión exitoso', token });
+    // Respuesta con token y rol del usuario
+    res.status(200).json({
+      message: 'Inicio de sesión exitoso',
+      token,
+      role: user.isAdmin ? 'admin' : 'user', // Incluye el rol en la respuesta
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error en el servidor', error });
   }
 };
 
-// Restablecer la contraseña
+// restablecer contraseña (aun no lo he probado)
 const resetPassword = async (req, res) => {
   try {
     const { token, newPassword } = req.body;
@@ -85,7 +90,7 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ message: 'Usuario no encontrado' });
     }
 
-    // Hashear la nueva contraseña (el middleware se encargará de hacerlo automáticamente)
+    // hashear la nueva contraseña (el middleware se encarga de hacerlo automáticamente)
     user.password = newPassword;
     await user.save();
 
